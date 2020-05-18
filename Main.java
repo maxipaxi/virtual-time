@@ -15,7 +15,7 @@ public class Main {
     A.start();
     B.start();
 
-    try{
+    try {
       A.join();
       B.join();
     } catch (Exception e) {}
@@ -25,7 +25,7 @@ public class Main {
     var semA = t.freshSemaphore(0);
     var semB = t.freshSemaphore(0);
     var A = t.freshThread(() -> {
-      for(int i = 0; i < 4; i++){
+      for (int i = 0; i < 4; i++) {
         t.sleep(1000);
         System.out.println("  A");
         semB.release();
@@ -33,7 +33,7 @@ public class Main {
       }
     });
     var B = t.freshThread(() -> {
-      for(int i = 0; i < 4; i++){
+      for (int i = 0; i < 4; i++) {
         t.sleep(499);
         System.out.println("    B");
         semA.release();
@@ -44,7 +44,7 @@ public class Main {
     A.start();
     B.start();
 
-    try{
+    try {
       A.join();
       B.join();
     } catch (Exception e) {}
