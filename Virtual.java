@@ -8,7 +8,7 @@ public class Virtual implements Time {
   private long _clock;
   private int _jitter;
   private Random _rand;
-  
+
   public Virtual(int jitter) {
     _jitter = jitter;
     _rand = new Random();
@@ -23,7 +23,7 @@ public class Virtual implements Time {
       _lock.acquire();
     } catch (Exception e) {}
     _threads--;
-    check_queue();
+    wakeUpNextIfNoneActive();
     _lock.release();
   }
 
@@ -41,22 +41,26 @@ public class Virtual implements Time {
     } catch (Exception e) {}
     var sem = new Semaphore(0);
     _queue.put(_clock + millis + (_jitter == 0 ? 0 : _rand.nextInt(_jitter)), sem);
-    check_queue();
+    wakeUpNextIfNoneActive();
     _lock.release();
     try {
       sem.acquire();
     } catch (Exception e) {}
   }
 
-  private void check_queue() {
+  private void wakeUpNextIfNoneActive() {
     if (_threads > 0 && _queue.size() == _threads) {
-      Map.Entry<Long, Semaphore> v;
-      do {
-        v = _queue.pollFirstEntry();
-        v.getValue().release();
-      } while (_queue.size() > 0 && _queue.firstKey() == v.getKey());
-      _clock = v.getKey();
+      wakeUpNext();
     }
+  }
+
+  private void wakeUpNext() {
+    ScheduleMap.LongEntry<Semaphore> v;
+    do {
+      v = _queue.pollFirstEntry();
+      v.getValue().release();
+    } while (_queue.size() > 0 && _queue.firstKey() == v.getKey());
+    _clock = v.getKey();
   }
 
   public void releaseNext() {
@@ -65,7 +69,7 @@ public class Virtual implements Time {
     } catch (Exception e) {}
     var sem = new Semaphore(0);
     _queue.put(_queue.firstKey(), sem);
-    check_queue();
+    wakeUpNextIfNoneActive();
     _lock.release();
     try {
       sem.acquire();
